@@ -1,8 +1,16 @@
 import csv
+import pandas as pd
 
 if __name__ == '__main__':
-    with open('../dev-0/in.tsv', mode='r', encoding='utf-8') as file:
+    file_path = "dev-0/in.tsv"
+    data = []
+    with open(file_path, mode='r', encoding='utf-8') as file:
         reader = csv.reader(file, delimiter='\t')  # Użyj tabulacji jako separatora
         for row in reader:
-            print(row)
-            break
+            data.append({'doc_id': row[0], 'page_num': row[1], 'year': row[2], 'ocr_text': row[3]})
+
+        # Convert to pandas DataFrame for easier processing
+        df = pd.DataFrame(data)
+
+        # Example: Display the first row
+        print(df.head())
