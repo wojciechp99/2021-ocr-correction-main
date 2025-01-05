@@ -3,8 +3,9 @@ import pandas as pd
 import re
 from autocorrect import Speller
 import jiwer
-import nltk
 import difflib
+import language_tool_python
+from pandas import DataFrame
 
 
 def calculate_overall_wer(reference_texts, hypothesis_texts):
@@ -52,18 +53,40 @@ def use_autocorrection_library(cleaned_text, reference_texts):
     print(f"Overall WER for first 10 rows: {overall_wer}")
 
     # Compute differences for the first 10 rows
-    # print("\nDifferences between cleaned and corrected text (First 10 Rows):\n")
-    # for i, (clean_row, correct_row) in enumerate(zip(cleaned_text.iloc[:10], corrected_first_10)):
-    #     diff = list(difflib.unified_diff(
-    #         clean_row.split(),
-    #         correct_row.split(),
-    #         lineterm="",
-    #         fromfile="cleaned_text",
-    #         tofile="corrected_text"
-    #     ))
-    #     print(f"Row {i + 1} Diff:")
-    #     print("\n".join(diff))
-    #     print("-" * 50)
+    print("\nDifferences between cleaned and corrected text (First 10 Rows):\n")
+    for i, (clean_row, correct_row) in enumerate(zip(cleaned_text.iloc[:10], corrected_first_10)):
+        diff = list(difflib.unified_diff(
+            clean_row.split(),
+            correct_row.split(),
+            lineterm="",
+            fromfile="cleaned_text",
+            tofile="corrected_text"
+        ))
+        print(f"Row {i + 1} Diff:")
+        print("\n".join(diff))
+        print("-" * 50)
+
+def use_language_tool_python(text_df, reference_texts):
+    # Get the first 10 rows of the DataFrame column
+    text_list = text_df.iloc[:10].squeeze().tolist()
+
+    # Initialize the language tool for Polish
+    tool = language_tool_python.LanguageTool('pl')
+
+    # Apply corrections row by row
+    corrected_texts = []
+    for original_text in text_list:
+        matches = tool.check(original_text)
+        corrected_text = language_tool_python.utils.correct(original_text, matches)
+        corrected_texts.append(corrected_text)
+
+    result_df = DataFrame(corrected_texts)
+    print(result_df)
+
+    # Compute overall WER
+    overall_wer = calculate_overall_wer(reference_texts, corrected_texts)
+    print(f"Overall WER for first 10 rows: {overall_wer}")
+
 
 if __name__ == '__main__':
     file_path = "../dev-0/in.tsv"
@@ -95,4 +118,6 @@ if __name__ == '__main__':
         # Apply clean_text function to each reference text
         cleaned_reference_texts = [clean_text(text) for text in reference_texts]
 
-        use_autocorrection_library(cleaned_text, cleaned_reference_texts)
+        # use_autocorrection_library(cleaned_text, cleaned_reference_texts)
+
+        use_language_tool_python(cleaned_text, cleaned_reference_texts)
