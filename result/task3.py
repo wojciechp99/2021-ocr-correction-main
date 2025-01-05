@@ -1,11 +1,13 @@
 import csv
-import pandas as pd
-import re
-from autocorrect import Speller
-import jiwer
 import difflib
+import re
+
+import jiwer
 import language_tool_python
+import pandas as pd
+from autocorrect import Speller
 from pandas import DataFrame
+from transformers import BertForMaskedLM, BertTokenizer, pipeline, AutoTokenizer, AutoModelForSeq2SeqLM
 
 
 def calculate_overall_wer(reference_texts, hypothesis_texts):
@@ -87,6 +89,39 @@ def use_language_tool_python(text_df, reference_texts):
     overall_wer = calculate_overall_wer(reference_texts, corrected_texts)
     print(f"Overall WER for first 10 rows: {overall_wer}")
 
+def use_pretrained_model(text, reference_texts):
+    # Load model and tokenizer
+    model_name = "dkleczek/bert-base-polish-uncased-v1"
+    model = BertForMaskedLM.from_pretrained(model_name)
+    tokenizer = BertTokenizer.from_pretrained(model_name)
+
+    # Create a fill-mask pipeline
+    nlp = pipeline("fill-mask", model=model, tokenizer=tokenizer)
+
+    def correct_polish_text(text):
+        tokens = text.split()  # Split text into tokens
+        corrected_tokens = []
+
+        # Iterate through tokens and correct each one
+        for i, token in enumerate(tokens):
+            # Replace the current token with [MASK]
+            masked_text = " ".join(tokens[:i] + ["[MASK]"] + tokens[i + 1:])
+
+            # Use the pipeline to predict the masked token
+            predictions = nlp(masked_text)
+
+            # Get the top prediction
+            corrected_word = predictions[0]["token_str"]
+            corrected_tokens.append(corrected_word)
+
+        # Join corrected tokens into a sentence
+        corrected_text = " ".join(corrected_tokens)
+        return corrected_text
+
+    corrected_text = correct_polish_text(text)
+
+    print("Original Text:", text)
+    print("Corrected Text:", corrected_text)
 
 if __name__ == '__main__':
     file_path = "../dev-0/in.tsv"
@@ -120,4 +155,6 @@ if __name__ == '__main__':
 
         # use_autocorrection_library(cleaned_text, cleaned_reference_texts)
 
-        use_language_tool_python(cleaned_text, cleaned_reference_texts)
+        # use_language_tool_python(cleaned_text, cleaned_reference_texts)
+
+        #use_pretrained_model(cleaned_text[0], cleaned_reference_texts)
