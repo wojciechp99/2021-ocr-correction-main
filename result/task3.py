@@ -157,4 +157,4 @@ if __name__ == '__main__':
 
         # use_language_tool_python(cleaned_text, cleaned_reference_texts)
 
-        #use_pretrained_model(cleaned_text[0], cleaned_reference_texts)
+        # use_pretrained_model(cleaned_text[0], cleaned_reference_texts)
